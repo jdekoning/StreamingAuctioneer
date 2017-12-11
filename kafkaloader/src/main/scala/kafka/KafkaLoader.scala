@@ -5,7 +5,7 @@ import java.util.Properties
 import org.apache.kafka.clients.producer.{Callback, KafkaProducer, ProducerRecord, RecordMetadata}
 import org.slf4j.{Logger, LoggerFactory}
 
-class KafkaLoader {
+class KafkaLoader[T] {
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   object futureCallback extends Callback {
@@ -32,16 +32,16 @@ class KafkaLoader {
   props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
   props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer")
 
-    private val producer = new KafkaProducer[String,String](props)
+    private val producer = new KafkaProducer[String, T](props)
 
-    def send(topic: String, message: String): Unit = send(topic, List(message))
+    def send(topic: String, message: T): Unit = send(topic, List(message))
 
-    def send(topic: String, messages: Seq[String]): Unit = {
+    def send(topic: String, messages: Seq[T]): Unit = {
 
-      logger.info("sending batch messages to kafka queue.......")
+      logger.info(s"sending batch with ${messages.length} messages to kafka queue")
       val messageResults = messages.map {
         message => producer.send(
-          new ProducerRecord[String, String](topic, message),
+          new ProducerRecord[String, T](topic, message),
           futureCallback)
       }
     }

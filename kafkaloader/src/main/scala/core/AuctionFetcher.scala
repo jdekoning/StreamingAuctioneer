@@ -13,8 +13,6 @@ class AuctionFetcher(lastAuctionUpdate: AtomicLong)(implicit ec: ExecutionContex
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
   val auctionClient = new AuctionDataClient()
   val emptyAuctionData = Future(AuctionData(realms = Seq.empty[Realm], auctions = Seq.empty[Auction]))
-  //
-  //  lastAuctionUpdate.set(currentAuctionTimestamp + 1)
 
   def getNewAuctionData: Future[Seq[Auction]] = {
     val statusFut = auctionClient.getAuctionStatus()
@@ -22,8 +20,10 @@ class AuctionFetcher(lastAuctionUpdate: AtomicLong)(implicit ec: ExecutionContex
       // Normally there should be only one file, without evidence of another, just get the head
       status.files.headOption match {
         case Some(file) =>
-          if (file.lastModified > lastAuctionUpdate.get()) {
-            lastAuctionUpdate.set(file.lastModified)
+          val lastModifiedTimestamp = file.lastModified
+          if (lastModifiedTimestamp > lastAuctionUpdate.get()) {
+            logger.info(s"new data found at timestamp: $lastModifiedTimestamp, doing getAuctionData call...")
+            lastAuctionUpdate.set(lastModifiedTimestamp)
             auctionClient.getAuctionData(file)
           }
           else emptyAuctionData
