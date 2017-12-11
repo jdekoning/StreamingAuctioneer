@@ -31,7 +31,7 @@ object ProducerApp extends App {
     futureAuctions.map(auctions => {
       auctions.grouped(batchSize).foreach { message =>
         logger.info("Sending message batch size " + message.length)
-        producer.send(topic, message.toString)
+        producer.send(topic, message.map(_.toString))
       }
     })
   }
