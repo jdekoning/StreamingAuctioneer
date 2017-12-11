@@ -29,9 +29,11 @@ object ProducerApp extends App {
     }
 
     futureAuctions.map(auctions => {
-      auctions.grouped(batchSize).foreach { message =>
-        logger.info("Sending message batch size " + message.length)
-        producer.send(topic, message.map(_.toString))
+      val groupedAuctions = auctions.groupBy(_.item)
+      logger.info(s"Sending ${auctions.length} auctions for ${groupedAuctions.size} items")
+      groupedAuctions.grouped(batchSize).foreach { message =>
+        logger.debug("Sending message batch size " + message.size)
+        producer.send(topic, message.map(m => (m._1, m._2.toString)))
       }
     })
   }

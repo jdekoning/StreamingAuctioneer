@@ -29,19 +29,19 @@ class KafkaLoader[T] {
   props.put("batch.size", "16384")
   props.put("linger.ms", "1")
   props.put("buffer.memory", "33554432")
-  props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
+  props.put("key.serializer", "org.apache.kafka.common.serialization.LongSerializer")
   props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer")
 
-    private val producer = new KafkaProducer[String, T](props)
+    private val producer = new KafkaProducer[Long, T](props)
 
-    def send(topic: String, message: T): Unit = send(topic, List(message))
+    def send(topic: String, message: Tuple2[Long, T]): Unit = send(topic, Map(message))
 
-    def send(topic: String, messages: Seq[T]): Unit = {
+    def send(topic: String, messages: Map[Long, T]): Unit = {
 
-      logger.info(s"sending batch with ${messages.length} messages to kafka queue")
-      val messageResults = messages.map {
-        message => producer.send(
-          new ProducerRecord[String, T](topic, message),
+      logger.debug(s"sending batch with ${messages.size} messages to kafka queue")
+      val messageResults = messages foreach { message =>
+        producer.send(
+          new ProducerRecord[Long, T](topic, message._1, message._2),
           futureCallback)
       }
     }
