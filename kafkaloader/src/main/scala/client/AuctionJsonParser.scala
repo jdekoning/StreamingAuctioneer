@@ -1,6 +1,6 @@
 package client
 
-import core._
+import core.identity._
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.libs.json._
 

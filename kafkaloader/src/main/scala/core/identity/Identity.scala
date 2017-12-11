@@ -1,4 +1,4 @@
-package core
+package core.identity
 
 case class File(url: String, lastModified: Long)
 case class AuctionStatus(files: Seq[File])

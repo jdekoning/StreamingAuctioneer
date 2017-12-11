@@ -4,7 +4,7 @@ import org.slf4j.{Logger, LoggerFactory}
 import play.api.libs.ws.ahc._
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
-import core.{AuctionData, AuctionStatus, File}
+import core.identity.{AuctionData, AuctionStatus, File}
 
 import scala.concurrent.{ExecutionContext, Future}
 
