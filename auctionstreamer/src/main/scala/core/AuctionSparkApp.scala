@@ -35,11 +35,11 @@ object AuctionSparkApp extends App {
 
   case class Auction(auc: Long, item: Long, owner: String, ownerRealm: String, bid: Long, buyout: Long, quantity: Long, timeLeft: String, rand: Long, seed:Long, context:Long)
   implicit val auctionReads = Json.reads[Auction]
-  def bodyToAuctionStatus(body: String): Option[Auction] = {
+  def bodyToAuctionStatus(body: String): Option[List[Auction]] = {
     val json = Json.parse(body)
-    val statusFromJson: JsResult[Auction] = Json.fromJson[Auction](json)
+    val statusFromJson: JsResult[List[Auction]] = Json.fromJson[List[Auction]](json)
     statusFromJson match {
-      case JsSuccess(as: Auction, path: JsPath) => Some(as)
+      case JsSuccess(as: List[Auction], path: JsPath) => Some(as)
       case e: JsError =>
         logger.info(s"Error encountered: ${e.getClass} - ${JsError.toJson(e).toString()}")
         None
