@@ -20,6 +20,6 @@ lazy val auctionstreamer = (project in file("auctionstreamer")).
     commonSettings,
     name:= "AuctionStreamer",
     libraryDependencies ++= Seq(
-      scalaTest % Test, slf4j, slf4jSimple, spark, sparkKafka, sparkStreaming
+      scalaTest % Test, slf4j, slf4jSimple, spark, playJson, sparkKafka, sparkStreaming, jacksonScala
     )
   )

@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicLong
 object ProducerApp extends App {
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
   val topic = "auction-topic"
-  val producer = new KafkaLoader[String]()
+  val producer = new KafkaLoader()
   val batchSize = 100
   val lastAuctionUpdate: AtomicLong = new AtomicLong(0)
   val auctionFetcher = new AuctionFetcher(lastAuctionUpdate)
@@ -33,7 +33,7 @@ object ProducerApp extends App {
       logger.info(s"Sending ${auctions.length} auctions for ${groupedAuctions.size} items")
       groupedAuctions.grouped(batchSize).foreach { message =>
         logger.debug("Sending message batch size " + message.size)
-        producer.send(topic, message.map(m => (m._1, m._2.toString)))
+        producer.send(topic, message.map(m => (m._1, m._2)))
       }
     })
   }

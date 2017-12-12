@@ -15,9 +15,9 @@ class PlayClient(implicit val ec: ExecutionContext) {
   system.registerOnTermination {
     System.exit(0)
   }
+  val auctionJsonParser = new AuctionJsonParser
   implicit val materializer = ActorMaterializer()
   val wsClient = StandaloneAhcWSClient()
-  val jsonParser = new AuctionJsonParser()
   private val url = "https://us.api.battle.net/wow/auction/data/medivh?locale=en_US&apikey=5he762e8ugx2tydz3zjkpnjwrt9vqv5u"
 
   def getCallStatus: Future[Option[AuctionStatus]] = {
@@ -25,7 +25,7 @@ class PlayClient(implicit val ec: ExecutionContext) {
       val statusText: String = response.statusText
       val jsonBody = response.body
       logger.info(s"Got a response from getAuctionStatus $statusText")
-      jsonParser.bodyToAuctionStatus(jsonBody)
+      auctionJsonParser.bodyToAuctionStatus(jsonBody)
     }
   }
 
@@ -35,7 +35,7 @@ class PlayClient(implicit val ec: ExecutionContext) {
         val statusText: String = response.statusText
         val jsonBody = response.body
         logger.info(s"Got a response from getAuctionData $statusText")
-        jsonParser.bodyToAuctionData(jsonBody)
+        auctionJsonParser.bodyToAuctionData(jsonBody)
       }
     }
     else {

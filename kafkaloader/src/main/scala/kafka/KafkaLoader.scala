@@ -2,10 +2,14 @@ package kafka
 
 import java.util.Properties
 
+import scala.collection.JavaConversions._
+import core.identity.Auction
 import org.apache.kafka.clients.producer.{Callback, KafkaProducer, ProducerRecord, RecordMetadata}
 import org.slf4j.{Logger, LoggerFactory}
+import play.api.libs.json.Json
 
-class KafkaLoader[T] {
+class KafkaLoader {
+
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   object futureCallback extends Callback {
@@ -21,28 +25,31 @@ class KafkaLoader[T] {
     }
   }
 
-  private val props = new Properties()
+  val kafkaParams: Map[String, Object] = Map[String, Object](
+    "bootstrap.servers" -> "localhost:9092",
+    "acks"-> "all",
+    "enable.idempotence" -> "true",
+    "batch.size" -> "16384",
+    "linger.ms" -> "1",
+    "buffer.memory" -> "33554432",
+    "key.serializer" -> "org.apache.kafka.common.serialization.LongSerializer",
+    "value.serializer" -> "org.apache.kafka.common.serialization.StringSerializer"
+  )
 
-  props.put("bootstrap.servers", "localhost:9092")
-  props.put("acks", "all")
-  props.put("enable.idempotence", "true")
-  props.put("batch.size", "16384")
-  props.put("linger.ms", "1")
-  props.put("buffer.memory", "33554432")
-  props.put("key.serializer", "org.apache.kafka.common.serialization.LongSerializer")
-  props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer")
+  private val producer = new KafkaProducer[Long, String](kafkaParams)
 
-    private val producer = new KafkaProducer[Long, T](props)
+  def send(topic: String, messages: Map[Long, Seq[Auction]]): Unit = {
 
-    def send(topic: String, message: Tuple2[Long, T]): Unit = send(topic, Map(message))
-
-    def send(topic: String, messages: Map[Long, T]): Unit = {
-
-      logger.debug(s"sending batch with ${messages.size} messages to kafka queue")
-      val messageResults = messages foreach { message =>
-        producer.send(
-          new ProducerRecord[Long, T](topic, message._1, message._2),
-          futureCallback)
-      }
+    logger.debug(s"sending batch with ${messages.size} messages to kafka queue")
+    val messageResults = messages foreach { message =>
+      producer.send(
+        new ProducerRecord[Long, String](topic, message._1, auctionsToStrings(message._2)),
+        futureCallback)
     }
+  }
+
+  case class Auctions()
+  implicit val auctionWrites = Json.writes[Auction]
+  def auctionsToStrings(auctions: Seq[Auction]): String = Json.toJson[Seq[Auction]](auctions.toList).toString()
+
 }
