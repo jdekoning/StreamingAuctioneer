@@ -2,6 +2,8 @@ import sbt._
 
 object Dependencies {
   lazy val scalaTest = "org.scalatest" %% "scalatest" % "3.0.3"
+  lazy val wiremock = "com.github.tomakehurst" % "wiremock" % "2.6.0"
+  lazy val easymock = "org.easymock" % "easymock" % "3.4"
   lazy val kafka = "org.apache.kafka" % "kafka-clients" % "1.0.0"
   lazy val slf4j = "org.slf4j" % "slf4j-api" % "1.7.25"
   lazy val slf4jSimple = "org.slf4j" % "slf4j-simple" % "1.7.25"

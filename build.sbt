@@ -23,7 +23,7 @@ lazy val kafkaloader = (project in file("kafkaloader"))
     name:= "KafkaLoader",
     libraryDependencies ++= Seq(
       slf4j, slf4jSimple, kafka, play, playJson,
-      scalaTest % Test
+      scalaTest % Test, wiremock % Test, easymock % Test
     )
   )
 
