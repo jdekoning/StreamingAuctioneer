@@ -1,7 +1,5 @@
 package kafka
 
-import java.util.Properties
-
 import scala.collection.JavaConversions._
 import core.identity.Auction
 import org.apache.kafka.clients.producer.{Callback, KafkaProducer, ProducerRecord, RecordMetadata}

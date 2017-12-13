@@ -1,10 +1,10 @@
-package client
+package core.json
 
 import core.identity._
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.libs.json._
 
-class AuctionJsonParser {
+object AuctionJsonParser {
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   implicit val fileReads = Json.reads[File]
@@ -29,6 +29,17 @@ class AuctionJsonParser {
     val statusFromJson: JsResult[AuctionData] = Json.fromJson[AuctionData](json)
     statusFromJson match {
       case JsSuccess(as: AuctionData, path: JsPath) => Some(as)
+      case e: JsError =>
+        logger.info(s"Error encountered: ${e.getClass} - ${JsError.toJson(e).toString()}")
+        None
+    }
+  }
+
+  def bodyToAuction(body: String): Option[List[Auction]] = {
+    val json = Json.parse(body)
+    val statusFromJson: JsResult[List[Auction]] = Json.fromJson[List[Auction]](json)
+    statusFromJson match {
+      case JsSuccess(as: List[Auction], path: JsPath) => Some(as)
       case e: JsError =>
         logger.info(s"Error encountered: ${e.getClass} - ${JsError.toJson(e).toString()}")
         None

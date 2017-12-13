@@ -6,20 +6,34 @@ lazy val commonSettings = Seq(
   version      := "0.1.0-SNAPSHOT"
 )
 
-lazy val kafkaloader = (project in file("kafkaloader")).
-  settings(
+lazy val auctionidentity = (project in file("auctionidentity"))
+  .settings(
     commonSettings,
-    name:= "KafkaLoader",
+    name:= "AuctionIdentity",
     libraryDependencies ++= Seq(
-      scalaTest % Test, slf4j, slf4jSimple, kafka, play, playJson
+      slf4j, slf4jSimple, playJson,
+      scalaTest % Test
     )
   )
 
-lazy val auctionstreamer = (project in file("auctionstreamer")).
-  settings(
+lazy val kafkaloader = (project in file("kafkaloader"))
+  .dependsOn(auctionidentity)
+  .settings(
+    commonSettings,
+    name:= "KafkaLoader",
+    libraryDependencies ++= Seq(
+      slf4j, slf4jSimple, kafka, play, playJson,
+      scalaTest % Test
+    )
+  )
+
+lazy val auctionstreamer = (project in file("auctionstreamer"))
+  .dependsOn(auctionidentity)
+  .settings(
     commonSettings,
     name:= "AuctionStreamer",
     libraryDependencies ++= Seq(
-      scalaTest % Test, slf4j, slf4jSimple, spark, playJson, sparkKafka, sparkStreaming, jacksonScala
+      slf4j, slf4jSimple, spark, playJson, sparkKafka, sparkStreaming, jacksonScala,
+      scalaTest % Test
     )
   )

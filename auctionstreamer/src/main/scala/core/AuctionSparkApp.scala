@@ -1,5 +1,7 @@
 package core
 
+import core.identity.AuctionWindow
+import core.json.AuctionJsonParser
 import org.apache.spark._
 import org.apache.spark.streaming._
 import org.apache.kafka.clients.consumer.ConsumerRecord
@@ -9,7 +11,6 @@ import org.apache.spark.streaming.kafka010._
 import org.apache.spark.streaming.kafka010.LocationStrategies.PreferConsistent
 import org.apache.spark.streaming.kafka010.ConsumerStrategies.Subscribe
 import org.slf4j.{Logger, LoggerFactory}
-import play.api.libs.json._
 
 object AuctionSparkApp extends App {
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
@@ -37,21 +38,8 @@ object AuctionSparkApp extends App {
     Subscribe[Long, String](topics, kafkaParams)
   )
 
-  case class Auction(auc: Long, item: Long, owner: String, ownerRealm: String, bid: Long, buyout: Long, quantity: Long, timeLeft: String, rand: Long, seed:Long, context:Long)
-  implicit val auctionReads = Json.reads[Auction]
-  def bodyToAuctionStatus(body: String): Option[List[Auction]] = {
-    val json = Json.parse(body)
-    val statusFromJson: JsResult[List[Auction]] = Json.fromJson[List[Auction]](json)
-    statusFromJson match {
-      case JsSuccess(as: List[Auction], path: JsPath) => Some(as)
-      case e: JsError =>
-        logger.info(s"Error encountered: ${e.getClass} - ${JsError.toJson(e).toString()}")
-        None
-    }
-  }
-
   val recordTuple = stream.map(record => (record.key, record.value))
-  val keyedAuctions = recordTuple.flatMapValues(bodyToAuctionStatus)
+  val keyedAuctions = recordTuple.flatMapValues(AuctionJsonParser.bodyToAuction)
   val keyedAveragePrice = keyedAuctions.mapValues(values => values.map(_.buyout).sum / values.length).cache()
   val SUM_REDUCER: (Long,Long) => Long = (a, b) => a + b
   val windowSumByKey = keyedAveragePrice.reduceByKeyAndWindow(SUM_REDUCER, windowDuration, slideDuration)
@@ -59,8 +47,6 @@ object AuctionSparkApp extends App {
   val windowAverage = keyedAveragePrice.window(windowDuration, slideDuration)
 
   val joinedWindow = windowSumByKey.join(windowSizeByKey).join(windowAverage)
-
-  case class AuctionWindow(item: Long, accumAvg: Long, lastAvg: Long)
 
   joinedWindow.foreachRDD { rdd =>
     rdd.foreach { record =>

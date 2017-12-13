@@ -5,6 +5,7 @@ import play.api.libs.ws.ahc._
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import core.identity.{AuctionData, AuctionStatus, File}
+import core.json.AuctionJsonParser
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -15,7 +16,6 @@ class PlayClient(implicit val ec: ExecutionContext) {
   system.registerOnTermination {
     System.exit(0)
   }
-  val auctionJsonParser = new AuctionJsonParser
   implicit val materializer = ActorMaterializer()
   val wsClient = StandaloneAhcWSClient()
   private val url = "https://us.api.battle.net/wow/auction/data/medivh?locale=en_US&apikey=5he762e8ugx2tydz3zjkpnjwrt9vqv5u"
@@ -25,7 +25,7 @@ class PlayClient(implicit val ec: ExecutionContext) {
       val statusText: String = response.statusText
       val jsonBody = response.body
       logger.info(s"Got a response from getAuctionStatus $statusText")
-      auctionJsonParser.bodyToAuctionStatus(jsonBody)
+      AuctionJsonParser.bodyToAuctionStatus(jsonBody)
     }
   }
 
@@ -35,7 +35,7 @@ class PlayClient(implicit val ec: ExecutionContext) {
         val statusText: String = response.statusText
         val jsonBody = response.body
         logger.info(s"Got a response from getAuctionData $statusText")
-        auctionJsonParser.bodyToAuctionData(jsonBody)
+        AuctionJsonParser.bodyToAuctionData(jsonBody)
       }
     }
     else {
