@@ -15,7 +15,7 @@ object AuctionSparkApp extends App {
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   val conf: SparkConf = new SparkConf().setMaster("local[2]").setAppName("NetworkWordCount")
-  val streamingContext = new StreamingContext(conf, Seconds(1))
+  val streamingContext = new StreamingContext(conf, Seconds(30))
 
   val kafkaParams: Map[String, Object] = Map[String, Object](
     "bootstrap.servers" -> "localhost:9092",
@@ -26,11 +26,15 @@ object AuctionSparkApp extends App {
     "enable.auto.commit" -> (false: java.lang.Boolean)
   )
 
+  //Should be a week window
+  val windowDuration = Minutes(60)
+  val slideDuration = Minutes(1)
+
   val topics = Array("auction-topic")
-  val stream: InputDStream[ConsumerRecord[String, String]] = KafkaUtils.createDirectStream[String, String](
+  val stream: InputDStream[ConsumerRecord[Long, String]] = KafkaUtils.createDirectStream[Long, String](
     streamingContext,
     PreferConsistent,
-    Subscribe[String, String](topics, kafkaParams)
+    Subscribe[Long, String](topics, kafkaParams)
   )
 
   case class Auction(auc: Long, item: Long, owner: String, ownerRealm: String, bid: Long, buyout: Long, quantity: Long, timeLeft: String, rand: Long, seed:Long, context:Long)
@@ -48,11 +52,27 @@ object AuctionSparkApp extends App {
 
   val recordTuple = stream.map(record => (record.key, record.value))
   val keyedAuctions = recordTuple.flatMapValues(bodyToAuctionStatus)
-  keyedAuctions.print()
+  val keyedAveragePrice = keyedAuctions.mapValues(values => values.map(_.buyout).sum / values.length).cache()
+  val SUM_REDUCER: (Long,Long) => Long = (a, b) => a + b
+  val windowSumByKey = keyedAveragePrice.reduceByKeyAndWindow(SUM_REDUCER, windowDuration, slideDuration)
+  val windowSizeByKey = keyedAveragePrice.mapValues(_ => 1L).reduceByKeyAndWindow(SUM_REDUCER, windowDuration, slideDuration)
+  val windowAverage = keyedAveragePrice.window(windowDuration, slideDuration)
+
+  val joinedWindow = windowSumByKey.join(windowSizeByKey).join(windowAverage)
+
+  case class AuctionWindow(item: Long, accumAvg: Long, lastAvg: Long)
+
+  joinedWindow.foreachRDD { rdd =>
+    rdd.foreach { record =>
+      val aWindow = AuctionWindow(record._1, record._2._1._1 / record._2._1._2, record._2._2)
+      logger.info(s"Found some amazing entries: item ${aWindow.item}, 1 hour Avg: ${aWindow.accumAvg}, lastAverage ${aWindow.lastAvg}")
+      if (aWindow.lastAvg > aWindow.accumAvg) {
+        val percentIncrease = ((aWindow.lastAvg.toDouble / aWindow.accumAvg.toDouble - 1)*100).floor
+        logger.warn(s"The price of ${aWindow.item} went up by $percentIncrease%")
+      }
+    }
+  }
 
   streamingContext.start()
   streamingContext.awaitTermination
-  logger.info("SOMETHING amazing")
-
-
 }
