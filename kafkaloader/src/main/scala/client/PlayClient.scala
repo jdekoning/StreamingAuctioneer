@@ -9,7 +9,7 @@ import core.json.AuctionJsonParser
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class PlayClient(implicit val ec: ExecutionContext) {
+class PlayClient(validDataUrl: String)(implicit val ec: ExecutionContext) {
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   implicit val system = ActorSystem()
@@ -18,9 +18,8 @@ class PlayClient(implicit val ec: ExecutionContext) {
   }
   implicit val materializer = ActorMaterializer()
   val wsClient = StandaloneAhcWSClient()
-  private val url = "https://us.api.battle.net/wow/auction/data/medivh?locale=en_US&apikey=5he762e8ugx2tydz3zjkpnjwrt9vqv5u"
 
-  def getCallStatus: Future[Option[AuctionStatus]] = {
+  def getCallStatus(url: String): Future[Option[AuctionStatus]] = {
     wsClient.url(url).get().map { response =>
       val statusText: String = response.statusText
       val jsonBody = response.body
@@ -45,8 +44,9 @@ class PlayClient(implicit val ec: ExecutionContext) {
   }
 
   def validateUrl(url: String): Boolean = {
-    url.contains("http://auction-api-us.worldofwarcraft.com/auction-data/")
+    val validUrl = url.contains(validDataUrl)
+      if (!validUrl) {logger.warn(s"Returned $url does not contain $validDataUrl, will not execute datafetch call")}
+    validUrl
   }
-
 
 }

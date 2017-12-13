@@ -2,20 +2,20 @@ package core
 
 import java.util.concurrent.atomic.AtomicLong
 
-import client.AuctionDataClient
+import client.{AuctionDataClient, PlayClient}
 import core.identity.{Auction, AuctionData, Realm}
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-class AuctionFetcher(lastAuctionUpdate: AtomicLong)(implicit ec: ExecutionContext) {
+class AuctionFetcher(lastAuctionUpdate: AtomicLong, playClient: PlayClient)(implicit ec: ExecutionContext) {
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
-  val auctionClient = new AuctionDataClient()
+  val auctionClient = new AuctionDataClient(playClient)
   val emptyAuctionData = Future(AuctionData(realms = Seq.empty[Realm], auctions = Seq.empty[Auction]))
 
-  def getNewAuctionData: Future[Seq[Auction]] = {
-    val statusFut = auctionClient.getAuctionStatus()
+  def getNewAuctionData(auctionFetchUrl: String): Future[Seq[Auction]] = {
+    val statusFut = auctionClient.getAuctionStatus(auctionFetchUrl)
     val auctionData = statusFut.flatMap(status => {
       // Normally there should be only one file, without evidence of another, just get the head
       status.files.headOption match {

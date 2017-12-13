@@ -6,7 +6,7 @@ import core.json.AuctionJsonParser
 import org.apache.kafka.clients.producer.{Callback, KafkaProducer, ProducerRecord, RecordMetadata}
 import org.slf4j.{Logger, LoggerFactory}
 
-class KafkaLoader {
+class KafkaLoader(kafkaParams: Map[String, Object]) {
 
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
@@ -22,17 +22,6 @@ class KafkaLoader {
       }
     }
   }
-
-  val kafkaParams: Map[String, Object] = Map[String, Object](
-    "bootstrap.servers" -> "localhost:9092",
-    "acks"-> "all",
-    "enable.idempotence" -> "true",
-    "batch.size" -> "16384",
-    "linger.ms" -> "1",
-    "buffer.memory" -> "33554432",
-    "key.serializer" -> "org.apache.kafka.common.serialization.LongSerializer",
-    "value.serializer" -> "org.apache.kafka.common.serialization.StringSerializer"
-  )
 
   private val producer = new KafkaProducer[Long, String](kafkaParams)
 

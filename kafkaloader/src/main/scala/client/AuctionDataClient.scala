@@ -6,12 +6,11 @@ import org.slf4j.{Logger, LoggerFactory}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-class AuctionDataClient(implicit ec: ExecutionContext) {
+class AuctionDataClient(playClient: PlayClient)(implicit ec: ExecutionContext) {
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
-  val playClient = new PlayClient()
 
-  def getAuctionStatus(): Future[AuctionStatus] = {
-    val getStatus = playClient.getCallStatus
+  def getAuctionStatus(auctionFetchUrl: String): Future[AuctionStatus] = {
+    val getStatus = playClient.getCallStatus(auctionFetchUrl)
     getStatus.onComplete {
       case Success(response) => logger.debug(s"response is: $response")
       case Failure(e) => logger.error(s"failed api call: ${e.getClass} - ${e.getLocalizedMessage}")
