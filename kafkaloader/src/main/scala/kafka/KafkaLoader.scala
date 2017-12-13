@@ -2,9 +2,9 @@ package kafka
 
 import scala.collection.JavaConversions._
 import core.identity.Auction
+import core.json.AuctionJsonParser
 import org.apache.kafka.clients.producer.{Callback, KafkaProducer, ProducerRecord, RecordMetadata}
 import org.slf4j.{Logger, LoggerFactory}
-import play.api.libs.json.Json
 
 class KafkaLoader {
 
@@ -39,15 +39,11 @@ class KafkaLoader {
   def send(topic: String, messages: Map[Long, Seq[Auction]]): Unit = {
 
     logger.debug(s"sending batch with ${messages.size} messages to kafka queue")
-    val messageResults = messages foreach { message =>
+    messages foreach { message =>
       producer.send(
-        new ProducerRecord[Long, String](topic, message._1, auctionsToStrings(message._2)),
+        new ProducerRecord[Long, String](topic, message._1, AuctionJsonParser.auctionsToStrings(message._2)),
         futureCallback)
     }
   }
-
-  case class Auctions()
-  implicit val auctionWrites = Json.writes[Auction]
-  def auctionsToStrings(auctions: Seq[Auction]): String = Json.toJson[Seq[Auction]](auctions.toList).toString()
 
 }

@@ -39,7 +39,7 @@ object AuctionSparkApp extends App {
   )
 
   val recordTuple = stream.map(record => (record.key, record.value))
-  val keyedAuctions = recordTuple.flatMapValues(AuctionJsonParser.bodyToAuction)
+  val keyedAuctions = recordTuple.flatMapValues(AuctionJsonParser.bodyToAuctions)
   val keyedAveragePrice = keyedAuctions.mapValues(values => values.map(_.buyout).sum / values.length).cache()
   val SUM_REDUCER: (Long,Long) => Long = (a, b) => a + b
   val windowSumByKey = keyedAveragePrice.reduceByKeyAndWindow(SUM_REDUCER, windowDuration, slideDuration)

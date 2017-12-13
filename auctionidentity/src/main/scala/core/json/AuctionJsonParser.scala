@@ -11,6 +11,7 @@ object AuctionJsonParser {
   implicit val auctionStatusReads = Json.reads[AuctionStatus]
   implicit val realmReads = Json.reads[Realm]
   implicit val auctionReads = Json.reads[Auction]
+  implicit val auctionWrites = Json.writes[Auction]
   implicit val auctionDataReads = Json.reads[AuctionData]
 
   def bodyToAuctionStatus(body: String): Option[AuctionStatus] = {
@@ -35,7 +36,7 @@ object AuctionJsonParser {
     }
   }
 
-  def bodyToAuction(body: String): Option[List[Auction]] = {
+  def bodyToAuctions(body: String): Option[List[Auction]] = {
     val json = Json.parse(body)
     val statusFromJson: JsResult[List[Auction]] = Json.fromJson[List[Auction]](json)
     statusFromJson match {
@@ -45,4 +46,6 @@ object AuctionJsonParser {
         None
     }
   }
+
+  def auctionsToStrings(auctions: Seq[Auction]): String = Json.toJson[Seq[Auction]](auctions.toList).toString()
 }
