@@ -1,5 +1,7 @@
 package core
 
+import java.util.Date
+
 import core.identity.{AuctionWindow, VolatileWarning}
 import org.apache.spark._
 import org.apache.spark.streaming._
@@ -52,17 +54,23 @@ object AuctionSparkApp extends App {
   val windowAverage = getWindowAverage(keyedAveragePrice, windowDuration, slideDuration)
 
   val joinedWindow = windowSumByKey.join(windowSizeByKey).join(windowAverage)
-  val auctionWindowRDD = joinedWindow.map {case (item: Long, ((sum: Long, size: Long), lastAvg: Long)) => AuctionWindow(item, getAverage(sum, size), lastAvg)}
+  val auctionWindowRDD = joinedWindow.map {case (item: Long, ((sum: Long, size: Long), lastAvg: Long)) =>
+    AuctionWindow(item, getAverage(sum, size), lastAvg, "auction-item-batch", new Date(System.currentTimeMillis()))} // Rather not use System millis, but data was missing a timestamp
   auctionWindowRDD.saveToEs("auction/notification") //send basic info to elasticSearch
   val windowWithAverage = auctionWindowRDD.map(aWindow => Tuple2(aWindow, (aWindow.lastAvg.toDouble / aWindow.accumAvg) - 1D)).cache()
   val fastDropRDD = windowWithAverage.filter(cfa => cfa._2 < 0 && cfa._2.abs > notificationWarningDiff)
   fastDropRDD.map {case (aWindow:AuctionWindow, cfa: Double) =>
     VolatileWarning(aWindow.item, percentIncrease(cfa),
-      slope = "negative", aWindow.accumAvg, aWindow.lastAvg)}.saveToEs("auction/notification")
+      slope = "negative", aWindow.accumAvg, aWindow.lastAvg,
+      "auction-notification", new Date(System.currentTimeMillis()))
+  }.saveToEs("auction/notification") //send negative notification changes to elasticSearch
+
   val fastRiseRDD = windowWithAverage.filter(cfa => cfa._2 > 0 && cfa._2.abs > notificationWarningDiff)
-  fastRiseRDD.map { case (aWindow:AuctionWindow, cfa: Double) =>
-      VolatileWarning(aWindow.item, percentIncrease(cfa),
-      slope = "positive", aWindow.accumAvg, aWindow.lastAvg)}.saveToEs("auction/notification")
+  fastRiseRDD.map {case (aWindow:AuctionWindow, cfa: Double) =>
+    VolatileWarning(aWindow.item, percentIncrease(cfa),
+      slope = "positive", aWindow.accumAvg, aWindow.lastAvg,
+      "auction-notification", new Date(System.currentTimeMillis()))
+  }.saveToEs("auction/notification") //send positive notification changes to elasticSearch
 
 
 //  auctionWindowRDD.foreachRDD { rdd =>
