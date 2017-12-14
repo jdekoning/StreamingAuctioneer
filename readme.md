@@ -14,7 +14,7 @@ Read further for other necessary tools.
 
 ### Prerequisites
 
-What things you need to install the software and how to install them
+Technologies you need to install yourself:
 
 ```
 SBT to build
@@ -24,7 +24,7 @@ Elasticsearch and Kibana for visualization
 
 ### Installing
 
-When the necessary tools are installed follow the following instructions:
+When the necessary tools are installed compile the project:
 
 ```
 sbt compile
@@ -51,7 +51,7 @@ or linux:
 kafka_2.12-1.0.0/bin/zookeeper-server-start.sh
 kafka_2.12-1.0.0/bin/kafka-server-start.sh
 elasticsearch-6.1.0/bin/elasticsearch 
-kibana-6.1.0-windows-x86_64/bin/kibana
+kibana-6.1.0/bin/kibana
 ```
 
 Then start the auctionstreaming application: core.AuctionSparkApp
