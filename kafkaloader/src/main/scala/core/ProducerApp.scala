@@ -8,16 +8,19 @@ import scala.util.{Failure, Success}
 import java.util.concurrent.atomic.AtomicLong
 
 import client.PlayClient
+import com.typesafe.config.ConfigFactory
 
 object ProducerApp extends App {
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
-  val topic = "auction-topic"
-  val apiKey = "mh2dyh3fh2jr2wet6uhd3jjkkecn6js8"
-  val auctionFetcherUrl = s"https://us.api.battle.net/wow/auction/data/medivh?locale=en_US&apikey=$apiKey"
-  val validDataUrl = "http://auction-api-us.worldofwarcraft.com/auction-data/"
+  private val config = ConfigFactory.load("auction-kafka")
+
+  val topic = config.getString("kafka-topic")
+  val apiKey = config.getString("api-key")
+  val auctionFetcherUrl = s"${config.getString("auction-fetcher-url")}$apiKey"
+  val validDataUrl = config.getString("valid-data-url")
 
   val kafkaParams: Map[String, Object] = Map[String, Object](
-    "bootstrap.servers" -> "localhost:9092",
+    "bootstrap.servers" -> config.getString("kafka-hosts"),
     "acks"-> "all",
     "enable.idempotence" -> "true",
     "batch.size" -> "16384",
@@ -36,7 +39,7 @@ object ProducerApp extends App {
   val scheduledLoader = new java.util.TimerTask {
     def run(): Unit = loadAuctionData()
   }
-  t.schedule(scheduledLoader, 5000L, 5000L)
+  t.schedule(scheduledLoader, 5000L, config.getLong("schedule-await"))
 
   def loadAuctionData(): Unit = {
     val futureAuctions = auctionFetcher.getNewAuctionData(auctionFetcherUrl)

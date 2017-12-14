@@ -52,6 +52,10 @@ class PlayClientSpec extends FlatSpec with Matchers with BeforeAndAfterAll with 
       ))
   }
 
+  override def afterAll(): Unit = {
+    wiremockServer.stop()
+  }
+
   it should "correctly check whether the url is valid from the returned status call" in {
     val validUrl = hostPort + "/auction-data/data/more/extras"
     val inValidUrl = hostPort + "/missing/aution-data/at/beginning"

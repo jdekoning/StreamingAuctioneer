@@ -1,7 +1,6 @@
 package client
 
 import core.identity._
-import core.json.AuctionJsonParser
 import org.scalatest.{FlatSpec, Matchers}
 import org.slf4j.{Logger, LoggerFactory}
 import org.scalatest.easymock.EasyMockSugar
@@ -50,8 +49,8 @@ class AuctionDataClientSpec extends FlatSpec with Matchers with EasyMockSugar wi
     ignore should "getAuctionStatus should return a failure if the service fails in any way" in {
       val result1 = Await.result(auctionDataClient.getAuctionStatus("bad_url"), 1 second)
       val result2 = Await.result(auctionDataClient.getAuctionStatus("bad_json"), 1 second)
-      result1 shouldBe a [Failure[Option[AuctionStatus]]]
-      result2 shouldBe a [Failure[Option[AuctionStatus]]]
+      result1 shouldBe a [Failure[_]]
+      result2 shouldBe a [Failure[_]]
     }
 
     it should "getAuctionData should return correctly return the class in happy flow" in {
