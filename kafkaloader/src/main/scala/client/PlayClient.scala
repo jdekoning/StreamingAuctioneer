@@ -43,6 +43,10 @@ class PlayClient(validDataUrl: String)(implicit val ec: ExecutionContext) {
     }
   }
 
+  /**
+    * The response of the first call is outside out control,
+    * to avoid calling a host that we do not want at least validate the host/port.
+    */
   def validateUrl(url: String): Boolean = {
     val validUrl = url.contains(validDataUrl)
       if (!validUrl) {logger.warn(s"Returned $url does not contain $validDataUrl, will not execute datafetch call")}

@@ -10,6 +10,9 @@ class KafkaLoader(kafkaParams: Map[String, Object]) {
 
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
+  /**
+    * This callback object is only use now to do some logging
+    */
   object futureCallback extends Callback {
     def onCompletion(metadata: RecordMetadata, exception: Exception): Unit = {
       Option(metadata) match {

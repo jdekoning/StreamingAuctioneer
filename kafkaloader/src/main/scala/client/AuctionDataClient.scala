@@ -9,6 +9,10 @@ import scala.util.{Failure, Success}
 class AuctionDataClient(playClient: PlayClient)(implicit ec: ExecutionContext) {
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
+  /**
+    * This methods gets the auctionStatus.
+    * If the call succeeds but the parsing does not, it should only give a Failure back
+    */
   def getAuctionStatus(auctionFetchUrl: String): Future[AuctionStatus] = {
     val getStatus = playClient.getCallStatus(auctionFetchUrl)
     getStatus.onComplete {
@@ -24,6 +28,10 @@ class AuctionDataClient(playClient: PlayClient)(implicit ec: ExecutionContext) {
     }
   }
 
+  /**
+    * This methods gets the auctionData.
+    * If the call succeeds but the parsing does not, it should only give a Failure back
+    */
   def getAuctionData(file: File): Future[AuctionData] = {
     val getAuctionData = playClient.getAuctionJson(file)
     getAuctionData.onComplete {

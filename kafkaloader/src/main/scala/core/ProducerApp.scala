@@ -14,11 +14,9 @@ object ProducerApp extends App {
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
   private val config = ConfigFactory.load("auction-kafka")
 
+  // Creation of the kafka loader
   val topic = config.getString("kafka-topic")
-  val apiKey = config.getString("api-key")
-  val auctionFetcherUrl = s"${config.getString("auction-fetcher-url")}$apiKey"
-  val validDataUrl = config.getString("valid-data-url")
-
+  val batchSize = 100
   val kafkaParams: Map[String, Object] = Map[String, Object](
     "bootstrap.servers" -> config.getString("kafka-hosts"),
     "acks"-> "all",
@@ -29,18 +27,30 @@ object ProducerApp extends App {
     "key.serializer" -> "org.apache.kafka.common.serialization.LongSerializer",
     "value.serializer" -> "org.apache.kafka.common.serialization.StringSerializer"
   )
-  val batchSize = 100
   val kafkaLoader = new KafkaLoader(kafkaParams)
+
+  // The client that will call the WoW auction API
+  val apiKey = config.getString("api-key")
+  val validDataUrl = config.getString("valid-data-url")
+  val auctionFetcherUrl = s"${config.getString("auction-fetcher-url")}$apiKey"
   val playClient = new PlayClient(validDataUrl)
+
+  /**
+    * AtomicLong to avoid immediate concurrancy problems
+    * If load really increases maybe use an external system to maintain such a counter
+    */
   val lastAuctionUpdate: AtomicLong = new AtomicLong(0)
   val auctionFetcher = new AuctionFetcher(lastAuctionUpdate, playClient)
 
+  // Schedule the loader to poll and if there is new data, get and push it to Kafka
   val t = new java.util.Timer()
   val scheduledLoader = new java.util.TimerTask {
     def run(): Unit = loadAuctionData()
   }
   t.schedule(scheduledLoader, 5000L, config.getLong("schedule-await"))
 
+  // Method that first does the api calls and then uses the kafkaLoader to push it to Kafka
+  // TODO Below method can be moved elsewhere, does not really belong in the App/Main
   def loadAuctionData(): Unit = {
     val futureAuctions = auctionFetcher.getNewAuctionData(auctionFetcherUrl)
     futureAuctions.onComplete {
