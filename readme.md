@@ -1,5 +1,5 @@
 # Wow-Streaming-Auctioneer
-Using the World of Warcraft auction data in a streaming fashion to gain market insights
+Using the World of Warcraft auction data in a streaming fashion to gain market insights and be awesome.
 
 ## Project overview
 
